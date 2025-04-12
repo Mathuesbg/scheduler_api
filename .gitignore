@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+
+# Python Poetry
+# poetry.lock
+poetry.toml
+
+# Taskipy
+coverage/
+htmlcov/
+
+# Coverage reports
+.coverage
+.cache
+*.cover
+*.py,cover
+coverage.xml
+
+# Pytest
+.pytest_cache/
+
+# Ruff
+.ruff_cache/
+
+# FastAPI reload artifacts
+*.db
+*.sqlite3
+alembic.ini
+
+# VS Code
+.vscode/
+
+# Migrations
+migrations/
+
+# Log files
+*.log
+
+# macOS & Linux
+.DS_Store
+Thumbs.db
