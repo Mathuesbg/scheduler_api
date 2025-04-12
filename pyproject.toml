@@ -8,7 +8,8 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
-    "fastapi[standard] (>=0.115.12,<0.116.0)"
+    "fastapi[standard]>=0.115.12,<0.116.0",
+    "sqlalchemy (>=2.0.40,<3.0.0)"
 ]
 
 [tool.poetry]
@@ -29,9 +30,9 @@ addopts = '-p no:warnings'
 lint = 'ruff check'
 pre_format = 'ruff check --fix'
 format = 'ruff format'
-run = 'fastapi dev fast_zero/app.py'
+run = 'fastapi dev src/scheduler_api/app.py'
 pre_test = 'task lint'
-test = 'pytest -s -x --cov=fast_zero -vv'
+test = 'pytest -s -x --cov=scheduler_api -vv'
 post_test = 'coverage html'
 
 [tool.ruff]
