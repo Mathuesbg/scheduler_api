@@ -27,6 +27,7 @@ def create_user(
         )
     )
 
+    # Validate if user credentials are unique
     if user_db:
         if user_db.username == user.username:
             raise HTTPException(
@@ -39,10 +40,12 @@ def create_user(
                 detail='Email already exists',
             )
 
+    # User Creation
     user_db = User(username=user.username, email=user.email)
     session.add(user_db)
     session.commit()
 
+    # Availabities Creation
     for date in user.availability:
         day = date.day
 
@@ -56,7 +59,6 @@ def create_user(
             session.add(availability)
 
     session.commit()
-
     session.refresh(user_db)
 
     return user_db
@@ -70,12 +72,21 @@ def create_user(
 def create_booking(
     booking: schema.BookingCreate, session: Session = Depends(get_session)
 ):
+    # Validate if the selected day is in the past
     if booking.day < datetime.today().date():
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail='Invalid day!'
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='The selected day cannot be in the past.',
         )
 
-    booked = session.scalar(
+    # Validate if the booking slot has a valid time range
+    if booking.slot.start >= booking.slot.end:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail='Invalid slot!'
+        )
+
+    # Check if the exact slot has already been booked
+    is_booked = session.scalar(
         select(Booking).where(
             Booking.user_id == booking.user_id,
             Booking.day == booking.day,
@@ -83,24 +94,39 @@ def create_booking(
         )
     )
 
-    if booked:
+    if is_booked:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail='Invalid day!'
+            status_code=HTTPStatus.BAD_REQUEST, detail='Slot already booked.'
         )
 
+    # Check if the selected day is part of the user’s availability schedule
     availabilities = session.scalars(
         select(Availability).where(Availability.user_id == booking.user_id)
+    ).all()
+
+    selected_weekday = booking.day.strftime('%A').lower()
+    user_schedule = [weekday.day for weekday in availabilities]
+
+    if selected_weekday not in user_schedule:
+        raise HTTPException(
+            status_code=400, detail='Selected day is not available'
+        )
+    
+    # the selected time slot must match an available slot exactly
+    is_exact_match = any(
+        available_slot.day == selected_weekday
+        and available_slot.start == booking.slot.start
+        and available_slot.end == booking.slot.end
+        for available_slot in availabilities
     )
 
-    booking_weekday = booking.day.strftime('%A').lower()
-    if booking_weekday not in [x.day for x in availabilities]:
-        raise HTTPException(status_code=400, detail='Invalid day!')
-
-    if booking.slot.start >= booking.slot.end:
+    if not is_exact_match:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, detail='Invalid slot!'
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='The selected time slot is not available.',
         )
 
+    # Validate if the selected time is in the past (for today)
     cond1 = booking.day == datetime.today()
     cond2 = booking.slot.start < datetime.now().time()
 
@@ -110,7 +136,8 @@ def create_booking(
             detail='The selected time cannot be in the past.',
         )
 
-    booked = session.scalar(
+    # Validate if the time slot overlaps with another existing booking
+    booked_slots = session.scalars(
         select(Booking).where(
             Booking.user_id == booking.user_id,
             Booking.day == booking.day,
@@ -119,27 +146,15 @@ def create_booking(
                 & (booking.slot.end > Booking.start)
             ),
         )
-    )
-    if booked:
+    ).all()
+
+    if booked_slots:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='Time slot is already booked.',
         )
 
-    availability = next(
-        (a for a in availabilities if a.day == booking.day), None
-    )
-    if availability:
-        valid = (
-            availability.start <= booking.slot.start < availability.end
-            and availability.start < booking.slot.end <= availability.end
-        )
-        if not valid:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='The time slot is not available.',
-            )
-
+    # Booking Creation
     booking_obj = Booking(
         user_id=booking.user_id,
         client_name=booking.name,
@@ -163,35 +178,26 @@ def create_booking(
     }
 
 
-@router.get(
-    path="/slots/",
-    response_model=schema.AvailableSlotsResponse
-    )
+@router.get(path='/slots/', response_model=schema.AvailableSlotsResponse)
 def get_avaliable_slots(
-    user_id: int, 
-    day : str, 
-    session : Session = Depends(get_session)
-    ):
-    
+    user_id: int, day: str, session: Session = Depends(get_session)
+):
+    # Validates date format 
     try:
-        day = datetime.strptime(day, "%Y-%m-%d").date()
+        day = datetime.strptime(day, '%Y-%m-%d').date()
     except ValueError:
-        raise HTTPException(
-            HTTPStatus.BAD_REQUEST,
-            detail="Invalid day"
-        )
-    
-    user_db = session.scalar(
-        select(User).where(User.id == user_id)
-    )
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Invalid day')
+
+
+    # Validates user's id
+    user_db = session.scalar(select(User).where(User.id == user_id))
 
     if not user_db:
-        raise HTTPException(
-            HTTPStatus.BAD_REQUEST,
-            detail="Invalid user id"
-        )
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Invalid user id')
 
-    weekday_str = day.strftime("%A").lower() 
+
+    # collecting bookings and availability for the selected date
+    weekday_str = day.strftime('%A').lower()
 
     availabilities = session.scalars(
         select(Availability).where(
@@ -202,19 +208,21 @@ def get_avaliable_slots(
 
     bookeds = session.scalars(
         select(Booking).where(
-            (Booking.user_id == user_id)
-            & (Booking.day == day)
+            (Booking.user_id == user_id) & (Booking.day == day)
         )
     ).all()
-    
-    avaliables_slots = {"slots" : []}
+
+
+    # collecting available bookings
+    avaliables_slots = {'slots': []}
 
     for slot in availabilities:
-
         is_booked = any(slot.start == booking.start for booking in bookeds)
 
         if not is_booked:
-            avaliables_slots['slots'].append({"start": slot.start, "end": slot.end})
-
+            avaliables_slots['slots'].append({
+                'start': slot.start,
+                'end': slot.end,
+            })
 
     return avaliables_slots
