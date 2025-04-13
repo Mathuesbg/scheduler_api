@@ -1,5 +1,6 @@
 from sqlalchemy import (
     Column,
+    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -24,6 +25,9 @@ class User(Base):
     availabilities = relationship(
         'Availability', back_populates='user', cascade='all, delete-orphan'
     )
+    bookings = relationship(
+        'Booking', back_populates='user', cascade='all, delete-orphan'
+    )
 
 
 class Availability(Base):
@@ -41,3 +45,22 @@ class Availability(Base):
     start = Column(Time, nullable=False)
     end = Column(Time, nullable=False)
     user = relationship('User', back_populates='availabilities')
+
+
+class Booking(Base):
+    __tablename__ = 'bookings'
+
+    __table_args__ = (
+        UniqueConstraint(
+            'user_id', 'day', 'start', 'end', name='unique_booking'
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    client_name = Column(String(100), nullable=False)
+    client_email = Column(String(100), nullable=False)
+    day = Column(Date, nullable=False)
+    start = Column(Time, nullable=False)
+    end = Column(Time, nullable=False)
+    user = relationship('User', back_populates='bookings')
