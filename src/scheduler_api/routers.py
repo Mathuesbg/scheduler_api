@@ -127,31 +127,13 @@ def create_booking(
         )
 
     # Validate if the selected time is in the past (for today)
-    cond1 = booking.day == datetime.today()
+    cond1 = booking.day == datetime.today().date()
     cond2 = booking.slot.start < datetime.now().time()
 
     if cond1 and cond2:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='The selected time cannot be in the past.',
-        )
-
-    # Validate if the time slot overlaps with another existing booking
-    booked_slots = session.scalars(
-        select(Booking).where(
-            Booking.user_id == booking.user_id,
-            Booking.day == booking.day,
-            (
-                (booking.slot.start < Booking.end)
-                & (booking.slot.end > Booking.start)
-            ),
-        )
-    ).all()
-
-    if booked_slots:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Time slot is already booked.',
         )
 
     # Booking Creation

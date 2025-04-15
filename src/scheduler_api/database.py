@@ -5,6 +5,6 @@ engine = create_engine('sqlite:///database.db')
 Session = sessionmaker(engine)
 
 
-def get_session():
+def get_session():  # pragma: no cover
     with Session() as session:
         yield session
