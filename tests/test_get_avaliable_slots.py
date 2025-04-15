@@ -1,10 +1,11 @@
-from datetime import date
+from datetime import date, timedelta
 from http import HTTPStatus
+
+day = date.today() + timedelta(days=1)
+day = day.strftime('%Y-%m-%d')
 
 
 def test_get_avaliable_slots_response_withou_slots(client, booking):
-    day = date.today()
-
     response = client.get(
         url=f'/slots/?user_id=1&day={day}',
     )
@@ -14,8 +15,6 @@ def test_get_avaliable_slots_response_withou_slots(client, booking):
 
 
 def test_get_avaliable_slots_returns_correctly_data_if_slots(client, user):
-    day = date.today()
-
     response = client.get(
         url=f'/slots/?user_id=1&day={day}',
     )
@@ -27,7 +26,6 @@ def test_get_avaliable_slots_returns_correctly_data_if_slots(client, user):
 
 
 def test_get_avaliable_slots_raise_exception_if_invalid_id(client, user):
-    day = date.today()
     user_id = 1000
     response = client.get(
         url=f'/slots/?user_id={user_id}&day={day}',
@@ -38,8 +36,8 @@ def test_get_avaliable_slots_raise_exception_if_invalid_id(client, user):
 
 
 def test_get_avaliable_slots_raise_exception_if_invalid_date(client, user):
-    day = date.today().strftime('%d/%m/%Y')
-
+    day = date.today() + timedelta(days=2)
+    day = day.strftime('%d-%m-%Y')
     response = client.get(
         url=f'/slots/?user_id=1&day={day}',
     )
