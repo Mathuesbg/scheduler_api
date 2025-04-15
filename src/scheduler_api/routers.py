@@ -6,8 +6,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from . import schema
+from .database import get_session
 from .models import Availability, Booking, User
-from .session import get_session
 
 router = APIRouter()
 
@@ -111,7 +111,7 @@ def create_booking(
         raise HTTPException(
             status_code=400, detail='Selected day is not available'
         )
-    
+
     # the selected time slot must match an available slot exactly
     is_exact_match = any(
         available_slot.day == selected_weekday
@@ -182,19 +182,17 @@ def create_booking(
 def get_avaliable_slots(
     user_id: int, day: str, session: Session = Depends(get_session)
 ):
-    # Validates date format 
+    # Validates date format
     try:
         day = datetime.strptime(day, '%Y-%m-%d').date()
     except ValueError:
         raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Invalid day')
-
 
     # Validates user's id
     user_db = session.scalar(select(User).where(User.id == user_id))
 
     if not user_db:
         raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Invalid user id')
-
 
     # collecting bookings and availability for the selected date
     weekday_str = day.strftime('%A').lower()
@@ -211,7 +209,6 @@ def get_avaliable_slots(
             (Booking.user_id == user_id) & (Booking.day == day)
         )
     ).all()
-
 
     # collecting available bookings
     avaliables_slots = {'slots': []}
