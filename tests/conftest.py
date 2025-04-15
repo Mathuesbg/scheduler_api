@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -47,6 +47,33 @@ def user(session):
 
     start = time(hour=10)
     end = time(hour=10, minute=40)
+
+    tomorrow = datetime.today() + timedelta(days=1)
+    day = tomorrow.strftime('%A').lower()
+
+    availabilities = Availability(
+        user_id=user.id, day=day, start=start, end=end
+    )
+    session.add(availabilities)
+    session.commit()
+
+    return user
+
+
+@pytest.fixture
+def user_today(session):
+    user = User(
+        username='UserTest',
+        email='test@mail.com',
+    )
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    start = time(hour=10)
+    end = time(hour=10, minute=40)
+
     day = datetime.today().strftime('%A').lower()
 
     availabilities = Availability(
@@ -60,11 +87,14 @@ def user(session):
 
 @pytest.fixture
 def booking(user, session):
+    tomorrow = datetime.today() + timedelta(days=1)
+    day = tomorrow.date()
+
     booking = Booking(
         user_id=user.id,
         client_name='usertest',
         client_email='user@test.com',
-        day=datetime.today().date(),
+        day=day,
         start=time(hour=10),
         end=time(hour=10, minute=40),
     )
