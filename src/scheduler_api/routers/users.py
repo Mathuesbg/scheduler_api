@@ -1,12 +1,12 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import or_, select
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from scheduler_api import schema
 from scheduler_api.database import get_session
 from scheduler_api.models import Availability, User
+from scheduler_api.validators import users_validator
 
 router = APIRouter()
 
@@ -19,28 +19,11 @@ router = APIRouter()
 def create_user(
     user: schema.UserCreate, session: Session = Depends(get_session)
 ):
-    user_db = session.scalar(
-        select(User).where(
-            or_(User.username == user.username, User.email == user.email)
-        )
-    )
-
-    # Validate if user credentials are unique
-    if user_db:
-        if user_db.username == user.username:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='Username already exists',
-            )
-        if user_db.email == user.email:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail='Email already exists',
-            )
+    users_validator.user_is_valid(user, session)
 
     # User Creation
-    user_db = User(username=user.username, email=user.email)
-    session.add(user_db)
+    new_user = User(username=user.username, email=user.email)
+    session.add(new_user)
     session.commit()
 
     # Availabities Creation
@@ -52,11 +35,11 @@ def create_user(
             end = slot.end
 
             availability = Availability(
-                user_id=user_db.id, day=day, start=start, end=end
+                user_id=new_user.id, day=day, start=start, end=end
             )
             session.add(availability)
 
     session.commit()
-    session.refresh(user_db)
+    session.refresh(new_user)
 
-    return user_db
+    return new_user

@@ -66,7 +66,7 @@ def test_create_booking_raises_if_end_is_less_or_equal_than_start(
     )
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert response.json() == {'detail': 'Invalid slot!'}
+    assert response.json() == {'detail': 'Invalid time range!'}
 
 
 def test_create_booking_raises_if_slot_already_booked(client, user, booking):
