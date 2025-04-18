@@ -7,11 +7,7 @@ from sqlalchemy.orm import Session
 from scheduler_api.database import get_session
 from scheduler_api.models import Availability, Booking
 from scheduler_api.schema import BookingCreate, BookingPublic
-from scheduler_api.validators import (
-    booking_validator,
-    date_validator,
-    time_validator,
-)
+from scheduler_api.validators import booking_validator
 
 router = APIRouter()
 
@@ -28,9 +24,7 @@ def create_booking(
         select(Availability).where(Availability.user_id == booking.user_id)
     ).all()
 
-    date_validator.date_is_valid(booking.day, availabilities)
-
-    time_validator.time_is_valid(
+    booking_validator.datetime_is_valid(
         booking.day, booking.slot.start, booking.slot.end
     )
 
