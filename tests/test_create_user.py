@@ -28,7 +28,7 @@ def test_create_user_raise_exception_if_username_already_exists(client, user):
     response = client.post(
         url='/users/',
         json={
-            'username': 'UserTest',
+            'username': user.username,
             'email': 'email@email.com',
             'availability': [
                 {
@@ -48,7 +48,7 @@ def test_create_user_raise_exception_if_email_already_exists(client, user):
         url='/users/',
         json={
             'username': 'Username',
-            'email': 'test@mail.com',
+            'email': user.email,
             'availability': [
                 {
                     'day': 'monday',

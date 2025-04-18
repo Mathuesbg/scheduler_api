@@ -1,11 +1,11 @@
 from datetime import date, timedelta
 from http import HTTPStatus
 
-day = date.today() + timedelta(days=1)
-day = day.strftime('%Y-%m-%d')
-
 
 def test_create_booking_returns_201_and_correctly_data(client, user):
+    day = date.today() + timedelta(days=1)
+    day = day.strftime('%Y-%m-%d')
+
     response = client.post(
         url='/bookings/',
         json={
@@ -54,6 +54,9 @@ def test_create_booking_raises_if_date_is_in_the_past(client, user):
 def test_create_booking_raises_if_end_is_less_or_equal_than_start(
     client, user
 ):
+    day = date.today() + timedelta(days=1)
+    day = day.strftime('%Y-%m-%d')
+
     response = client.post(
         url='/bookings/',
         json={
@@ -70,6 +73,9 @@ def test_create_booking_raises_if_end_is_less_or_equal_than_start(
 
 
 def test_create_booking_raises_if_slot_already_booked(client, user, booking):
+    day = date.today() + timedelta(days=1)
+    day = day.strftime('%Y-%m-%d')
+
     response = client.post(
         url='/bookings/',
         json={
@@ -106,6 +112,9 @@ def test_create_booking_raises_if_date_isnt_in_user_schedule(client, user):
 
 
 def test_create_booking_raises_if_time_slot_doesnt_match(client, user):
+    day = date.today() + timedelta(days=1)
+    day = day.strftime('%Y-%m-%d')
+
     response = client.post(
         url='/bookings/',
         json={
