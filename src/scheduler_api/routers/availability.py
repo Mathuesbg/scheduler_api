@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from scheduler_api import schema
 from scheduler_api.database import get_session
 from scheduler_api.models import Availability, Booking, User
-
 from scheduler_api.validators import availability_validator
 
 router = APIRouter()
@@ -87,15 +86,12 @@ def create_slots(
 
     for slot in availabilities.slots:
         availability_validator.timerange_is_valid(
-            start=slot.start, 
-            end=slot.end
-            )
+            start=slot.start, end=slot.end
+        )
 
         availability_validator.slot_is_valid(
-            start= slot.start,
-            end=slot.end, 
-            availabities=user_availabities
-            )
+            start=slot.start, end=slot.end, availabities=user_availabities
+        )
 
         availability = Availability(
             user_id=availabilities.user_id,
