@@ -24,6 +24,22 @@ class UserAvailability(BaseModel):
     slots: list[TimeRange]
 
 
+class UserAvailabilityCreate(BaseModel):
+    user_id: int
+    weekday: WeekDay
+    slots: list[TimeRange]
+
+
+class UserSlot(BaseModel):
+    id: int
+    weekday: WeekDay
+    slots: TimeRange
+
+
+class UserAvailabilityPublic(BaseModel):
+    availabilities: list[UserSlot]
+
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
